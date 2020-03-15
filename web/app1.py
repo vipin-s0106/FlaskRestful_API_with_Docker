@@ -34,9 +34,10 @@ users = db["Users"]
 
 
 def verify_user_and_password(posted_data):
-    user = users.find({'username':posted_data.get('username')})[0]
-    print(user)
-    if len(user):
+    user = users.find({'username':posted_data.get('username')})
+    print(user.count_documents())
+    if user.count_documents() > 0:
+        user = user[0]
         if bcrypt.hashpw(posted_data.get('password').encode('utf8'),user['password']):
             return (200,"")
         else:
@@ -57,15 +58,16 @@ class Register(Resource):
         #get the Data
         username = posted_data.get('username')
         password = posted_data.get('password')
-        hashed_pw = bcrypt.hashpw(password.encode('utf8'),bcrypt.gensalt())
-        #we don't store password as it is in database we have to use hash password
-        #hash(password + salt)
 
         if username and password:
-            user = users.find({'Username':username})[0]
-            print(user)
+            hashed_pw = bcrypt.hashpw(password.encode('utf8'),bcrypt.gensalt())
+            #we don't store password as it is in database we have to use hash password
+            #hash(password + salt)
+
+            user = users.find({'Username':username})
+            print(users.count_documents(user))
             #Verify that user has not registered with API Application earlier
-            if len(user) == 0:
+            if users.count_documents(user) == 0:
                 users.insert({
                     'username':username,
                     'password':hashed_pw,
@@ -139,4 +141,4 @@ api.add_resource(Sentence,'/update_sentence')
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0',debug=True)
