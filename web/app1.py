@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 api=Api(app)
 
-@app.route('/hello')
+@app.route('/')
 def hello_world():
     return jsonify({'msg':"Hello World!"})
 
@@ -24,21 +24,21 @@ Activity
 
 #************************** Mongo DB Implementation ************
 
-client = MongoClient("mongodb://db:27017")
+client = MongoClient("mongodb://127.0.0.1:27017/")
 db = client.SentencesDatabase
 users = db["Users"]
 
 #**********************************************************
 
 
-
-
 def verify_user_and_password(posted_data):
-    user = users.find({'username':posted_data.get('username')})
-    print(user.count_documents())
-    if user.count_documents() > 0:
-        user = user[0]
-        if bcrypt.hashpw(posted_data.get('password').encode('utf8'),user['password']):
+    # user = db.users.find({'username':posted_data.get('username')})
+    user_count = db.users.count({'username':posted_data.get('username')})
+    print(user_count)
+    if user_count > 0:
+        user = db.users.find({'username':posted_data.get('username')})[0]
+
+        if bcrypt.checkpw(posted_data.get('password').encode('utf8'),user['password']):
             return (200,"")
         else:
             return (301,"Incorrect Password")
@@ -47,7 +47,7 @@ def verify_user_and_password(posted_data):
 
 
 def count_tokens(posted_data):
-    user = users.find({'username':posted_data['username']})[0]
+    user = db.users.find({'username':posted_data['username']})[0]
     return user['tokens']
 
 
@@ -64,14 +64,15 @@ class Register(Resource):
             #we don't store password as it is in database we have to use hash password
             #hash(password + salt)
 
-            user = users.find({'Username':username})
-            print(users.count_documents(user))
+            user_count = db.users.count({'username':username})
+            print(str(user_count))
+
             #Verify that user has not registered with API Application earlier
-            if users.count_documents(user) == 0:
-                users.insert({
+            if user_count == 0:
+                db.users.insert({
                     'username':username,
                     'password':hashed_pw,
-                    'sentences':"",
+                    'sentence':"",
                     'tokens':5
                 })
                 retmap = {
@@ -119,7 +120,7 @@ class Sentence(Resource):
             })
 
         #store the sentence
-        users.update({
+        db.users.update({
             'username':username
             },{
                 "$set":
@@ -141,4 +142,4 @@ api.add_resource(Sentence,'/update_sentence')
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0',debug=True)
+    app.run(debug=True)
