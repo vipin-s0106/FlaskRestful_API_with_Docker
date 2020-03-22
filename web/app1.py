@@ -17,7 +17,7 @@ def hello_world():
 '''
 Activity
 1)Registration of a User
-2)Each User gets 10 tokens
+2)Each User gets 5 tokens
 3)Store a sentence for 1 tokens
 4)Retirve his stored sentence on out database for 1 tokens
 '''
@@ -95,6 +95,17 @@ class Register(Resource):
 
 class Sentence(Resource):
 
+    def get(self):
+        posted_data = request.get_json()
+        username = posted_data.get('username')
+        user_count = db.users.count({'username':username})
+        if user_count > 0:
+            user_detail = db.users.find({'username':username})[0]
+            json_data = {'sentence':user_detail.get('sentence'),'status_code':200}
+        else:
+            json_data = {"ErrorMsg":"Incorrect Username",'status_code':403}
+        return jsonify(json_data)
+
     def post(self):
 
         posted_data = request.get_json()
@@ -137,7 +148,8 @@ class Sentence(Resource):
 
 
 api.add_resource(Register,'/register')
-api.add_resource(Sentence,'/update_sentence')
+api.add_resource(Sentence,'/get_update_sentence')
+
 
 
 
